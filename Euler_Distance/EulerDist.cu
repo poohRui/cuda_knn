@@ -168,16 +168,16 @@ void Cuda_EulerDistance_3(float* A,
     float* d_C;
     
     size_t size_of_float = sizeof(float);
-    size_t size_patch_bytes_A;
-    size_t size_patch_bytes_B;
-    size_t size_patch_bytes_C;
+    size_t size_pitch_bytes_A;
+    size_t size_pitch_bytes_B;
+    size_t size_pitch_bytes_C;
     
-    cudaMallocPitch((void**)&d_A, &size_patch_bytes_A, m * size_of_float, dim);
-    cudaMallocPitch((void**)&d_B, &size_patch_bytes_B, n * size_of_float, dim);
-    cudaMallocPitch((void**)&d_C, &size_patch_bytes_C, n * size_of_float, m);
+    cudaMallocPitch((void**)&d_A, &size_pitch_bytes_A, m * size_of_float, dim);
+    cudaMallocPitch((void**)&d_B, &size_pitch_bytes_B, n * size_of_float, dim);
+    cudaMallocPitch((void**)&d_C, &size_pitch_bytes_C, n * size_of_float, m);
     
-    cudaMemcpy2D(d_A, size_patch_bytes_A, A, m * size_of_float, m * size_of_float, dim, cudaMemcpyHostToDevice);
-    cudaMemcpy2D(d_B, size_patch_bytes_B, B, n * size_of_float, n * size_of_float, dim, cudaMemcpyHostToDevice);
+    cudaMemcpy2D(d_A, size_pitch_bytes_A, A, m * size_of_float, m * size_of_float, dim, cudaMemcpyHostToDevice);
+    cudaMemcpy2D(d_B, size_pitch_bytes_B, B, n * size_of_float, n * size_of_float, dim, cudaMemcpyHostToDevice);
     
     EulerDistance_3<<<dimGrid, dimBlock>>>(d_A, d_B, d_C, m, n, dim);
     

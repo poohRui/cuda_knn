@@ -12,7 +12,6 @@
 #include <fstream>
 #include <cmath>
 #include <stdlib.h>
-#include <sys/time.h>
 #include <time.h>
 
 #include "EulerDist.h"
@@ -81,6 +80,24 @@ void EulerDistanceSerial(float*   A,
     }
 }
 
+void gemmSerial(float*   A,
+                float*   B,
+                float*   C,
+                int      m,
+                int      n,
+                int      dim){
+    
+    for(int i = 0;i < m;i++){
+        for(int j = 0;j < n;j++){
+            float val = 0.0;
+            for(int k = 0;k < dim;k++){
+                val += A[i * dim + k] * B[k * n + j];
+            }
+            C[i * n + j] = -2.0* val;
+        }
+    }
+}
+
 int main(){
     
     int m = 16384;
@@ -100,7 +117,7 @@ int main(){
     // Start timer
     clock_t start, end;
     start = clock();
-    
+
     // Compute Euler Distance,
     EulerDistanceSerial(A, B, C, m, n, dim);
     
@@ -110,15 +127,39 @@ int main(){
     
     cout<<"Serial invoke EulerDistance function need "<<dur/CLOCKS_PER_SEC<<"s."<<endl;
     
-    for(int i = 0; i< 100;i++){
-        cout<<C[9000 * n +i]<<endl;
-    }
+//    for(int i = 0; i< 100;i++){
+//        cout<<C[9000 * n +i]<<endl;
+//    }
     
     reorderVector(A, p_A, m, dim);
     reorderVector(B, p_B, n, dim);
     
-    // Call kernel to avoid the time of initial cuda
-    Cuda_EulerDistance_3(p_A, p_B, p_C, m, n, dim);
+    // Call a kernel first to avoid including the time of starting cuda environment.
+    Cuda_EulerDistance_4(p_A, p_B, p_C, m, n, dim);
+    
+    // Start timer
+    start = clock();
+    
+    // Compute Euler Distance,
+    Cuda_EulerDistance_1(p_A, p_B, p_C, m, n, dim);
+    
+    // Stop timer
+    end = clock();
+    dur = (double)(end - start);
+
+    cout<<"Parallel invoke EulerDistance1 function need "<<dur/CLOCKS_PER_SEC<<"s."<<endl;
+    
+    // Start timer
+    start = clock();
+    
+    // Compute Euler Distance,
+    Cuda_EulerDistance_2(p_A, p_B, p_C, m, n, dim);
+    
+    // Stop timer
+    end = clock();
+    dur = (double)(end - start);
+    
+    cout<<"Parallel invoke EulerDistance2 function need "<<dur/CLOCKS_PER_SEC<<"s."<<endl;
     
     // Start timer
     start = clock();
@@ -130,9 +171,40 @@ int main(){
     end = clock();
     dur = (double)(end - start);
     
-    cout<<"Parallel invoke EulerDistance function need "<<dur/CLOCKS_PER_SEC<<"s."<<endl;
+    cout<<"Parallel invoke EulerDistance3 function need "<<dur/CLOCKS_PER_SEC<<"s."<<endl;
     
-    for(int i = 0; i< 100;i++){
-        cout<<p_C[9000 * n +i]<<endl;
-    }
+    // Start timer
+    start = clock();
+    
+    // Compute Euler Distance,
+    Cuda_EulerDistance_4(p_A, p_B, p_C, m, n, dim);
+    
+    // Stop timer
+    end = clock();
+    dur = (double)(end - start);
+    
+    cout<<"Parallel invoke EulerDistance4 function need "<<dur/CLOCKS_PER_SEC<<"s."<<endl;
+    
+//    for(int i = 0;i< 100;i++){
+//        cout<<p_C[9000 * n +i]<<endl;
+//    }
+//
+    
+//
+//    gemmSerial(A, p_B, p_C, m, n, dim);
+//
+//    for(int i = 0;i<100;i++){
+//        cout<<p_C[9000 * n +i]<<endl;
+//    }
+    
+    // Output the result inorder to compare with parallel
+//    ofstream fs("dist.dat");
+//    for(int i = 0;i < m;i++){
+//        for(int j = 0;j < n;j++){
+//            fs << C[i * n + j]<<" ";
+//        }
+//        fs <<"\n";
+//    }
+//    fs.close();
+//
 }
